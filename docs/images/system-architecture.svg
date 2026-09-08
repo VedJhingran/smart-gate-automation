@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<style>
+text{font-family:Arial,sans-serif;font-size:20px;fill:#fff}
+.small{font-size:16px}
+.box{fill:#1f2937;stroke:#60a5fa;stroke-width:2;rx:12}
+.line{stroke:#94a3b8;stroke-width:3;marker-end:url(#a)}
+.title{font-size:34px;font-weight:bold}
+</style>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 z" fill="#94a3b8"/></marker></defs>
+<rect width="100%" height="100%" fill="#0f172a"/>
+
+<text x="420" y="50" class="title">Smart Gate System Architecture</text>
+<rect class="box" x="470" y="110" width="260" height="70"/><text x="540" y="153">Firebase</text>
+<rect class="box" x="470" y="310" width="260" height="70"/><text x="555" y="353">ESP32</text>
+<rect class="box" x="80" y="110" width="220" height="70"/><text x="145" y="153">PWA</text>
+<rect class="box" x="900" y="110" width="220" height="70"/><text x="950" y="153">Telegram</text>
+<rect class="box" x="80" y="520" width="220" height="70"/><text x="145" y="563">Alexa</text>
+<rect class="box" x="900" y="520" width="220" height="70"/><text x="955" y="563">Camera / NVR</text>
+<line class="line" x1="300" y1="145" x2="470" y2="145"/>
+<line class="line" x1="600" y1="180" x2="600" y2="310"/>
+<line class="line" x1="730" y1="145" x2="900" y2="145"/>
+<line class="line" x1="190" y1="520" x2="470" y2="380"/>
+<line class="line" x1="900" y1="520" x2="730" y2="380"/>
+
+</svg>
