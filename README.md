@@ -33,7 +33,7 @@ See [Architecture](docs/Architecture.md) for component responsibilities and the 
 
 | Mobile PWA dashboard | Wiring diagram |
 | --- | --- |
-| ![Smart Gate Automation PWA dashboard](docs/images/pwa-dashboard.png) | ![ESP32 Smart Gate Automation wiring diagram](docs/images/wiring-diagram.png) |
+| ![Smart Gate Automation PWA dashboard](docs/images/pwa-dashboard.png) |![Smart Gate Automation PWA dashboard](docs/images/PWA-app-2) | ![ESP32 Smart Gate Automation wiring diagram](docs/images/hardware-wiring.png) |
 
 ### System architecture
 
