@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>Gate</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gate">
+
+<style>
+  :root{
+    --navy-deep: #0b1220;
+    --navy-panel: #131c2e;
+    --navy-line: #223047;
+    --amber: #f5a623;
+    --amber-dim: #7a5518;
+    --green: #34d399;
+    --red: #f87171;
+    --ink: #eef2f7;
+    --ink-dim: #8b96a8;
+    --mono: 'SF Mono', 'JetBrains Mono', 'Courier New', monospace;
+    --sans: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body{
+    margin:0;
+    height:100%;
+    background:var(--navy-deep);
+    color:var(--ink);
+    font-family:var(--sans);
+    overscroll-behavior:none;
+  }
+
+  .screen{
+    min-height:100dvh;
+    padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    display:flex;
+    flex-direction:column;
+    max-width:480px;
+    margin:0 auto;
+  }
+
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    text-align:center;
+    margin-bottom:4px;
+  }
+
+  .house-name{
+    text-align:center;
+    font-size:22px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    margin-bottom:28px;
+  }
+
+  /* --- Signature element: the glowing gate arc --- */
+  .glow-stage{
+    position:relative;
+    height:180px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:8px;
+  }
+
+  .glow{
+    position:absolute;
+    width:220px;
+    height:220px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(245,166,35,0.35) 0%, rgba(245,166,35,0.08) 45%, rgba(245,166,35,0) 70%);
+    transition:background 0.6s ease;
+    filter:blur(2px);
+  }
+
+  .glow.locked{
+    background:radial-gradient(circle, rgba(245,166,35,0.28) 0%, rgba(245,166,35,0.06) 45%, rgba(245,166,35,0) 70%);
+  }
+
+  .glow.open{
+    background:radial-gradient(circle, rgba(52,211,153,0.4) 0%, rgba(52,211,153,0.1) 45%, rgba(52,211,153,0) 70%);
+    animation:pulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes pulse{
+    0%, 100%{ transform:scale(1); }
+    50%{ transform:scale(1.08); }
+  }
+
+  .arc-svg{ position:relative; z-index:1; }
+
+  .status-word{
+    text-align:center;
+    font-family:var(--mono);
+    font-size:15px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin-bottom:2px;
+  }
+
+  .status-word.open{ color:var(--green); }
+
+  .timestamp{
+    text-align:center;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-dim);
+    opacity:0.7;
+    margin-bottom:24px;
+  }
+
+  .visitor-banner{
+    display:none;
+    background:linear-gradient(135deg, #3a2a0f, #241a08);
+    border:1px solid var(--amber-dim);
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:20px;
+    align-items:center;
+    gap:12px;
+  }
+
+  .visitor-banner.show{ display:flex; }
+
+  .visitor-banner .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 8px var(--amber);
+    flex-shrink:0;
+    animation:blink 1s ease-in-out infinite;
+  }
+
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  .visitor-banner .text{
+    font-size:14px;
+    color:var(--ink);
+  }
+
+  .camera-card{
+    background:var(--navy-panel);
+    border:1px solid var(--navy-line);
+    border-radius:16px;
+    padding:14px;
+    margin-bottom:20px;
+  }
+
+  .camera-card-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+
+  .camera-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+  }
+
+  .camera-refresh-btn{
+    background:transparent;
+    border:1px solid var(--navy-line);
+    color:var(--ink-dim);
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:10px;
+    height:auto;
+  }
+
+  .camera-frame{
+    width:100%;
+    aspect-ratio:16/9;
+    border-radius:10px;
+    background:#0a0f1a;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+  }
+
+  .camera-frame img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:none;
+  }
+
+  .camera-frame img.loaded{ display:block; }
+
+  .camera-placeholder{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-dim);
+    text-align:center;
+    padding:0 20px;
+  }
+
+  .camera-timestamp{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink-dim);
+    text-align:center;
+    margin-top:8px;
+    opacity:0.7;
+  }
+
+  .controls{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-top:auto;
+  }
+
+  button{
+    -webkit-appearance:none;
+    appearance:none;
+    border:none;
+    border-radius:16px;
+    font-family:var(--sans);
+    font-weight:600;
+    cursor:pointer;
+    transition:transform 0.08s ease, opacity 0.2s ease;
+  }
+
+  button:active{ transform:scale(0.97); }
+  button:disabled{ opacity:0.5; }
+
+  .btn-open{
+    height:76px;
+    font-size:19px;
+    background:var(--amber);
+    color:#241a08;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    letter-spacing:0.01em;
+  }
+
+  .btn-ignore{
+    height:52px;
+    font-size:15px;
+    background:transparent;
+    border:1px solid var(--navy-line);
+    color:var(--ink-dim);
+  }
+
+  .conn-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    margin-top:16px;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink-dim);
+    opacity:0.6;
+  }
+
+  .conn-dot{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--ink-dim);
+  }
+
+  .conn-dot.live{ background:var(--green); }
+  .conn-dot.err{ background:var(--red); }
+
+  .stats-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+  }
+
+  .stat-box{
+    flex:1;
+    background:var(--navy-panel);
+    border:1px solid var(--navy-line);
+    border-radius:14px;
+    padding:12px 14px;
+    text-align:center;
+  }
+
+  .stat-value{
+    font-size:22px;
+    font-weight:600;
+    color:var(--amber);
+    font-family:var(--mono);
+  }
+
+  .stat-label{
+    font-size:11px;
+    color:var(--ink-dim);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    margin-top:2px;
+  }
+
+  .eventlog-card{
+    background:var(--navy-panel);
+    border:1px solid var(--navy-line);
+    border-radius:16px;
+    padding:14px;
+    margin-bottom:20px;
+  }
+
+  .eventlog-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin-bottom:10px;
+  }
+
+  .eventlog-list{
+    max-height:180px;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .eventlog-row{
+    display:flex;
+    gap:10px;
+    font-size:13px;
+    padding:4px 0;
+    border-bottom:1px solid var(--navy-line);
+  }
+
+  .eventlog-row:last-child{ border-bottom:none; }
+
+  .eventlog-time{
+    font-family:var(--mono);
+    color:var(--ink-dim);
+    flex-shrink:0;
+    width:42px;
+  }
+
+  .eventlog-text{ color:var(--ink); }
+
+  .eventlog-empty{
+    font-size:12px;
+    color:var(--ink-dim);
+    text-align:center;
+    padding:10px 0;
+  }
+
+  .notify-row{
+    display:flex;
+    justify-content:center;
+    margin-top:14px;
+  }
+
+  .notify-btn{
+    height:auto;
+    padding:9px 16px;
+    font-size:13px;
+    font-weight:500;
+    background:transparent;
+    border:1px solid var(--navy-line);
+    color:var(--ink-dim);
+    border-radius:20px;
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+
+  .notify-btn.on{
+    color:var(--amber);
+    border-color:var(--amber-dim);
+  }
+
+  .toast{
+    position:fixed;
+    left:20px; right:20px;
+    bottom:max(20px, env(safe-area-inset-bottom));
+    max-width:440px;
+    margin:0 auto;
+    background:var(--navy-panel);
+    border:1px solid var(--navy-line);
+    border-radius:12px;
+    padding:14px 16px;
+    font-size:14px;
+    text-align:center;
+    transform:translateY(120%);
+    transition:transform 0.3s cubic-bezier(.2,.9,.3,1);
+  }
+
+  .toast.show{ transform:translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="screen">
+
+  <div class="eyebrow">Main Gate</div>
+  <div class="house-name">Home Entry</div>
+
+  <div class="glow-stage">
+    <div class="glow locked" id="glow"></div>
+    <svg class="arc-svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+      <path d="M30 90 L30 40 L60 20 L90 40 L90 90" stroke="#f5a623" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" id="arc-path"/>
+      <rect x="52" y="65" width="16" height="25" rx="2" fill="#f5a623" id="arc-door"/>
+    </svg>
+  </div>
+
+  <div class="status-word" id="statusWord">LOCKED</div>
+  <div class="timestamp" id="timestamp">—</div>
+
+  <div class="visitor-banner" id="visitorBanner">
+    <div class="dot"></div>
+    <div class="text">Someone's at the gate</div>
+  </div>
+
+  <div class="camera-card">
+    <div class="camera-card-header">
+      <div class="camera-label">Gate Camera</div>
+      <button class="camera-refresh-btn" id="cameraRefreshBtn">Refresh</button>
+    </div>
+    <div class="camera-frame" id="cameraFrame">
+      <div class="camera-placeholder" id="cameraPlaceholder">Tap Refresh to check the gate camera</div>
+      <img id="cameraImg" alt="Gate camera snapshot">
+    </div>
+    <div class="camera-timestamp" id="cameraTimestamp"></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-value" id="statOpensToday">—</div>
+      <div class="stat-label">Opens Today</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value" id="statUptime">—</div>
+      <div class="stat-label">Gate Online</div>
+    </div>
+  </div>
+
+  <div class="eventlog-card">
+    <div class="eventlog-label">Recent Activity</div>
+    <div class="eventlog-list" id="eventLogList">
+      <div class="eventlog-empty">No events yet</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn-open" id="openBtn">🟢&nbsp;&nbsp;Open Gate</button>
+    <button class="btn-ignore" id="ignoreBtn">Dismiss visitor alert</button>
+  </div>
+
+  <div class="conn-row">
+    <div class="conn-dot" id="connDot"></div>
+    <span id="connText">connecting…</span>
+  </div>
+
+  <div class="notify-row">
+    <button class="notify-btn" id="notifyBtn">🔕&nbsp;&nbsp;Enable doorbell alerts</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.local.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js"></script>
+<script>
+  const runtimeConfig = window.SMART_GATE_CONFIG || {};
+  const FIREBASE_HOST = runtimeConfig.databaseUrl;
+  const FIREBASE_AUTH = runtimeConfig.databaseAuth;
+
+  const glow = document.getElementById('glow');
+  const statusWord = document.getElementById('statusWord');
+  const timestampEl = document.getElementById('timestamp');
+  const visitorBanner = document.getElementById('visitorBanner');
+  const openBtn = document.getElementById('openBtn');
+  const ignoreBtn = document.getElementById('ignoreBtn');
+  const connDot = document.getElementById('connDot');
+  const connText = document.getElementById('connText');
+  const toast = document.getElementById('toast');
+  const arcDoor = document.getElementById('arc-door');
+  const cameraImg = document.getElementById('cameraImg');
+  const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+  const cameraTimestampEl = document.getElementById('cameraTimestamp');
+  const cameraRefreshBtn = document.getElementById('cameraRefreshBtn');
+  const statOpensToday = document.getElementById('statOpensToday');
+  const statUptime = document.getElementById('statUptime');
+  const eventLogList = document.getElementById('eventLogList');
+
+  let toastTimer = null;
+  function showToast(msg, durationMs){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), durationMs || 2600);
+  }
+
+  function formatAgo(ms){
+    if (!ms) return '—';
+    const diff = Date.now() - ms;
+    const sec = Math.round(diff/1000);
+    if (sec < 5) return 'just now';
+    if (sec < 60) return `${sec}s ago`;
+    const min = Math.round(sec/60);
+    if (min < 60) return `${min}m ago`;
+    const hr = Math.round(min/60);
+    return `${hr}h ago`;
+  }
+
+  let lastKnownStatus = null;
+  let lastSeenVisitorWaiting = false;
+  let lastCameraTimestamp = null;
+
+  function render(status){
+    lastKnownStatus = status;
+    const isOpen = !!status.gateOpen;
+    const visitor = !!status.visitorWaiting;
+
+    glow.classList.toggle('open', isOpen);
+    glow.classList.toggle('locked', !isOpen);
+    statusWord.textContent = isOpen ? 'UNLOCKED' : 'LOCKED';
+    statusWord.classList.toggle('open', isOpen);
+    arcDoor.setAttribute('opacity', isOpen ? '0.25' : '1');
+
+    visitorBanner.classList.toggle('show', visitor);
+    timestampEl.textContent = 'Updated ' + formatAgo(status.lastUpdate ? Number(status.lastUpdate) + (bootDeviceOffset || 0) : null);
+
+    if (status.uptimeSeconds != null) {
+      statUptime.textContent = formatUptime(Number(status.uptimeSeconds));
+    }
+
+    // A visitor alert just appeared — the ESP32 auto-captures a snapshot
+    // on doorbell press, so fetch it a couple seconds later (giving it
+    // time to finish uploading) instead of making the user tap Refresh.
+    if (visitor && !lastSeenVisitorWaiting) {
+      setTimeout(fetchCameraSnapshot, 2500);
+      setTimeout(fetchEventLog, 2000);
+    }
+    lastSeenVisitorWaiting = visitor;
+  }
+
+  function formatUptime(totalSeconds){
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    if (days > 0) return `${days}d ${hours}h`;
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  }
+
+  // The ESP32 sends millis() (time since its own boot), not a wall-clock
+  // timestamp, so "ago" is approximate — good enough for a glance.
+  let bootDeviceOffset = null;
+
+  async function fetchStatus(){
+    try{
+      const res = await fetch(`${FIREBASE_HOST}/gate/status.json?auth=${FIREBASE_AUTH}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('bad response');
+      const data = await res.json();
+      connDot.className = 'conn-dot live';
+      connText.textContent = 'connected';
+      if (data) render(data);
+    } catch (err){
+      connDot.className = 'conn-dot err';
+      connText.textContent = 'connection lost — retrying';
+    }
+  }
+
+  // Matches the ESP32's getDateString() format (YYYY-MM-DD, local date).
+  function todayDateKey(){
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  async function fetchOpensToday(){
+    try{
+      const dateKey = todayDateKey();
+      const res = await fetch(`${FIREBASE_HOST}/gate/dailyOpens/${dateKey}.json?auth=${FIREBASE_AUTH}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('bad response');
+      const data = await res.json();
+      statOpensToday.textContent = data != null ? data : '0';
+    } catch (err){
+      // Leave whatever was last shown rather than blanking it on a hiccup.
+    }
+  }
+
+  async function fetchEventLog(){
+    try{
+      const res = await fetch(`${FIREBASE_HOST}/gate/eventLog.json?auth=${FIREBASE_AUTH}&orderBy="$key"&limitToLast=15`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('bad response');
+      const data = await res.json();
+
+      if (!data) {
+        eventLogList.innerHTML = '<div class="eventlog-empty">No events yet</div>';
+        return;
+      }
+
+      // Push keys sort chronologically ascending; show newest first.
+      const rows = Object.keys(data)
+        .sort()
+        .reverse()
+        .map((key) => {
+          const entry = data[key];
+          const time = entry && entry.time ? entry.time : '--:--';
+          const text = entry && entry.event ? entry.event : '';
+          return `<div class="eventlog-row"><div class="eventlog-time">${time}</div><div class="eventlog-text">${text}</div></div>`;
+        })
+        .join('');
+
+      eventLogList.innerHTML = rows || '<div class="eventlog-empty">No events yet</div>';
+    } catch (err){
+      // Silent — this is a nice-to-have panel, not critical status.
+    }
+  }
+
+  async function sendCommand(cmd, label){
+    openBtn.disabled = true;
+    ignoreBtn.disabled = true;
+    try{
+      const res = await fetch(`${FIREBASE_HOST}/gate/command.json?auth=${FIREBASE_AUTH}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cmd)
+      });
+      if (!res.ok) throw new Error('bad response');
+      showToast(label);
+    } catch (err){
+      showToast('Could not reach the gate — check connection');
+    } finally {
+      setTimeout(() => { openBtn.disabled = false; ignoreBtn.disabled = false; }, 1200);
+    }
+  }
+
+  openBtn.addEventListener('click', () => {
+    sendCommand('OPEN_GATE', 'Opening gate…');
+    setTimeout(() => { fetchEventLog(); fetchOpensToday(); }, 2000);
+  });
+  ignoreBtn.addEventListener('click', () => sendCommand('IGNORE', 'Visitor alert dismissed'));
+
+  // ---------------- CAMERA SNAPSHOT ----------------
+  // The camera is on the local network and this page is served over
+  // HTTPS, so the browser can't load it directly (mixed content). Instead
+  // the ESP32 fetches a snapshot itself and relays it through Firebase,
+  // which this page reads from.
+
+  function displayCameraImage(data){
+    if (!data || !data.image) return;
+    if (data.timestamp && data.timestamp === lastCameraTimestamp) return;   // no new photo yet
+
+    lastCameraTimestamp = data.timestamp;
+    cameraImg.src = 'data:image/jpeg;base64,' + data.image;
+    cameraImg.classList.add('loaded');
+    cameraPlaceholder.style.display = 'none';
+    cameraTimestampEl.textContent = 'Captured ' + formatAgo(data.timestamp ? Number(data.timestamp) + (bootDeviceOffset || 0) : null);
+  }
+
+  async function fetchCameraSnapshot(){
+    try{
+      const res = await fetch(`${FIREBASE_HOST}/gate/cameraSnapshot.json?auth=${FIREBASE_AUTH}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('bad response');
+      const data = await res.json();
+      if (data) displayCameraImage(data);
+    } catch (err){
+      // Silent — the periodic status poll already surfaces connection issues.
+    }
+  }
+
+  // Asks the ESP32 to capture a brand-new snapshot right now (rather than
+  // just reading whatever's already in Firebase), then polls briefly for
+  // the result to land.
+  async function requestFreshSnapshot(){
+    cameraRefreshBtn.disabled = true;
+    cameraRefreshBtn.textContent = 'Refreshing…';
+
+    try{
+      const res = await fetch(`${FIREBASE_HOST}/gate/command.json?auth=${FIREBASE_AUTH}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify('SNAPSHOT')
+      });
+      if (!res.ok) throw new Error('bad response');
+
+      const previousTimestamp = lastCameraTimestamp;
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        await fetchCameraSnapshot();
+        if (lastCameraTimestamp !== previousTimestamp || attempts >= 8) {
+          clearInterval(poll);
+          cameraRefreshBtn.disabled = false;
+          cameraRefreshBtn.textContent = 'Refresh';
+          if (lastCameraTimestamp === previousTimestamp) {
+            showToast('Camera did not respond — check the gate is online');
+          }
+        }
+      }, 1000);
+    } catch (err){
+      showToast('Could not reach the gate — check connection');
+      cameraRefreshBtn.disabled = false;
+      cameraRefreshBtn.textContent = 'Refresh';
+    }
+  }
+
+  cameraRefreshBtn.addEventListener('click', requestFreshSnapshot);
+
+  // Show whatever snapshot is already sitting in Firebase (e.g. from the
+  // last doorbell press) as soon as the app opens.
+  fetchCameraSnapshot();
+
+  fetchStatus();
+  setInterval(fetchStatus, 3000);
+
+  fetchOpensToday();
+  setInterval(fetchOpensToday, 15000);
+
+  fetchEventLog();
+  setInterval(fetchEventLog, 10000);
+
+  // Note: we deliberately don't register a separate generic sw.js here.
+  // firebase-messaging-sw.js (registered below, once notifications are
+  // enabled) is the only service worker this app needs — running two
+  // service workers at the same scope can make Safari's push registration
+  // behave unpredictably.
+
+  // ---------------- PUSH NOTIFICATIONS (Firebase Cloud Messaging) ----------------
+
+  // ── PASTE YOUR FIREBASE WEB APP CONFIG HERE (same values as firebase-messaging-sw.js) ──
+  const firebaseConfig = runtimeConfig.firebase;
+
+  // ── PASTE YOUR VAPID KEY HERE (from Cloud Messaging tab in console) ──
+  const VAPID_KEY = runtimeConfig.vapidKey;
+
+  const notifyBtn = document.getElementById('notifyBtn');
+  let messaging = null;
+
+  function setNotifyBtnState(enabled){
+    notifyBtn.classList.toggle('on', enabled);
+    notifyBtn.innerHTML = enabled ? '🔔&nbsp;&nbsp;Doorbell alerts on' : '🔕&nbsp;&nbsp;Enable doorbell alerts';
+  }
+
+  async function saveTokenToDatabase(token){
+    const safeKey = token.replace(/[.#$\[\]]/g, '_');
+    await fetch(`${FIREBASE_HOST}/gate/deviceTokens/${safeKey}.json?auth=${FIREBASE_AUTH}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(token)
+    });
+  }
+
+  async function enableNotifications(){
+    try{
+      if (!('Notification' in window)) {
+        showToast('This browser does not support notifications');
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        showToast('Notification permission denied');
+        setNotifyBtnState(false);
+        return;
+      }
+
+      firebase.initializeApp(firebaseConfig);
+      messaging = firebase.messaging();
+
+      const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+      const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+
+      if (!token) {
+        showToast('Could not get a notification token');
+        setNotifyBtnState(false);
+        return;
+      }
+
+      await saveTokenToDatabase(token);
+      setNotifyBtnState(true);
+      showToast('Doorbell alerts enabled');
+
+      // Foreground messages (app open and focused) don't auto-show a system
+      // notification, so surface them as a toast + refresh status instead.
+      messaging.onMessage((payload) => {
+        showToast(payload.notification?.body || 'Someone is at the gate');
+        fetchStatus();
+      });
+
+    } catch (err){
+      console.error(err);
+      const detail = (err && (err.message || err.code)) ? (err.message || err.code) : String(err);
+      showToast('Setup failed: ' + detail, 8000);
+      setNotifyBtnState(false);
+    }
+  }
+
+  notifyBtn.addEventListener('click', enableNotifications);
+
+  // If permission was already granted in a previous visit, re-register
+  // silently so alerts keep working without asking again.
+  if ('Notification' in window && Notification.permission === 'granted') {
+    enableNotifications();
+  }
+</script>
+
+</body>
+</html>

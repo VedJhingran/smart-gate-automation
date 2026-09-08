@@ -1,0 +1,15 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "gate": {
+      ".read": "auth != null",
+      "status": { ".write": "auth != null" },
+      "command": { ".write": "auth != null" },
+      "eventLog": { ".write": "auth != null" },
+      "dailyOpens": { ".write": "auth != null" },
+      "cameraSnapshot": { ".write": "auth != null" },
+      "deviceTokens": { ".write": "auth != null" }
+    }
+  }
+}
